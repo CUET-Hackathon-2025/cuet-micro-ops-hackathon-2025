@@ -190,9 +190,27 @@ worker.on("stalled", (jobId) => {
   console.warn(`[Worker] Job ${jobId} has stalled`);
 });
 
-// Graceful shutdown
+// ============ Graceful Shutdown ============
+/* eslint-disable n/no-process-exit */
+
+// Track shutdown state to prevent multiple shutdowns
+let isShuttingDown = false;
+const SHUTDOWN_TIMEOUT_MS = 30000;
+
 const shutdown = (signal: string): void => {
+  if (isShuttingDown) {
+    console.log(`[Worker] Shutdown already in progress, ignoring ${signal}`);
+    return;
+  }
+  isShuttingDown = true;
+
   console.log(`\n[Worker] ${signal} received. Starting graceful shutdown...`);
+
+  // Set timeout for forced shutdown
+  const forceExitTimeout = setTimeout(() => {
+    console.error("[Worker] Forced shutdown after timeout");
+    process.exit(1);
+  }, SHUTDOWN_TIMEOUT_MS);
 
   // Close worker (waits for active jobs to complete)
   worker
@@ -204,9 +222,13 @@ const shutdown = (signal: string): void => {
     .then(() => {
       closeS3();
       console.log("[Worker] Graceful shutdown completed");
+      clearTimeout(forceExitTimeout);
+      process.exit(0);
     })
     .catch((error: unknown) => {
       console.error("[Worker] Error during shutdown:", error);
+      clearTimeout(forceExitTimeout);
+      process.exit(1);
     });
 };
 
@@ -216,6 +238,30 @@ process.on("SIGTERM", () => {
 });
 process.on("SIGINT", () => {
   shutdown("SIGINT");
+});
+
+// ============ Uncaught Error Handlers ============
+
+// Handle uncaught exceptions - log and exit gracefully
+process.on("uncaughtException", (error: Error) => {
+  console.error("[Worker] Uncaught Exception:", error);
+  // Attempt graceful shutdown before exiting
+  if (!isShuttingDown) {
+    shutdown("uncaughtException");
+  } else {
+    process.exit(1);
+  }
+});
+
+// Handle unhandled promise rejections - log and exit gracefully
+process.on("unhandledRejection", (reason: unknown, promise: Promise<unknown>) => {
+  console.error("[Worker] Unhandled Rejection at:", promise, "reason:", reason);
+  // Attempt graceful shutdown before exiting
+  if (!isShuttingDown) {
+    shutdown("unhandledRejection");
+  } else {
+    process.exit(1);
+  }
 });
 
 // Log startup info

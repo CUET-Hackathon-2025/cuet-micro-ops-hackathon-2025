@@ -191,9 +191,26 @@ The following endpoints are kept for backward compatibility:
 }
 
 // ============ Graceful Shutdown ============
+/* eslint-disable n/no-process-exit */
+
+// Track shutdown state to prevent multiple shutdowns
+let isShuttingDown = false;
+const SHUTDOWN_TIMEOUT_MS = 30000;
 
 const gracefulShutdown = (server: ServerType) => (signal: string) => {
+  if (isShuttingDown) {
+    console.log(`[Server] Shutdown already in progress, ignoring ${signal}`);
+    return;
+  }
+  isShuttingDown = true;
+
   console.log(`\n[Server] ${signal} received. Starting graceful shutdown...`);
+
+  // Set timeout for forced shutdown
+  const forceExitTimeout = setTimeout(() => {
+    console.error("[Server] Forced shutdown after timeout");
+    process.exit(1);
+  }, SHUTDOWN_TIMEOUT_MS);
 
   // Stop accepting new connections
   server.close(() => {
@@ -205,17 +222,19 @@ const gracefulShutdown = (server: ServerType) => (signal: string) => {
         // Close S3 client
         closeS3();
         console.log("[Server] Graceful shutdown completed");
+        clearTimeout(forceExitTimeout);
+        process.exit(0);
       })
       .catch((error: unknown) => {
         console.error("[Server] Error during shutdown:", error);
+        clearTimeout(forceExitTimeout);
+        process.exit(1);
       });
   });
-
-  // Force shutdown after 30 seconds
-  setTimeout(() => {
-    console.error("[Server] Forced shutdown after timeout");
-  }, 30000);
 };
+
+// Export shutdown state for health checks
+export const getShutdownState = (): boolean => isShuttingDown;
 
 // ============ Start Server ============
 
@@ -245,4 +264,28 @@ process.on("SIGTERM", () => {
 });
 process.on("SIGINT", () => {
   shutdown("SIGINT");
+});
+
+// ============ Uncaught Error Handlers ============
+
+// Handle uncaught exceptions - log and exit gracefully
+process.on("uncaughtException", (error: Error) => {
+  console.error("[Server] Uncaught Exception:", error);
+  // Attempt graceful shutdown before exiting
+  if (!isShuttingDown) {
+    shutdown("uncaughtException");
+  } else {
+    process.exit(1);
+  }
+});
+
+// Handle unhandled promise rejections - log and exit gracefully
+process.on("unhandledRejection", (reason: unknown, promise: Promise<unknown>) => {
+  console.error("[Server] Unhandled Rejection at:", promise, "reason:", reason);
+  // Attempt graceful shutdown before exiting
+  if (!isShuttingDown) {
+    shutdown("unhandledRejection");
+  } else {
+    process.exit(1);
+  }
 });
