@@ -2,7 +2,7 @@ import { getTracer, createTraceparent } from "./tracing"
 import { logError, addBreadcrumb } from "./sentry"
 import type { SpanStatusCode } from "@opentelemetry/api"
 
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000"
+const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:4000"
 
 // API Response Types
 export interface HealthResponse {
