@@ -6,8 +6,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci
+# Install dependencies (use npm install since package-lock.json may not exist in monorepo sub-packages)
+RUN npm install
 
 # Copy source files
 COPY . .
@@ -50,8 +50,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci
+# Install dependencies (use npm install since package-lock.json may not exist in monorepo sub-packages)
+RUN npm install
 
 # Copy source files
 COPY . .
