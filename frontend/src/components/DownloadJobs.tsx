@@ -1,27 +1,116 @@
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useMutation } from "@tanstack/react-query"
-import { Download, Play, Search, Loader2, CheckCircle, XCircle, AlertTriangle, ExternalLink } from "lucide-react"
+import { Download, Play, Search, Loader2, CheckCircle, XCircle, AlertTriangle, ExternalLink, Wifi, WifiOff } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { checkDownload, startDownload, type DownloadCheckResponse, type DownloadStartResponse } from "@/lib/api"
+import { 
+  checkDownload, 
+  createAsyncDownload,
+  subscribeToJobUpdates,
+  type DownloadCheckResponse,
+  type AsyncDownloadResponse,
+  type SSEUpdate,
+} from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { addBreadcrumb } from "@/lib/sentry"
 
 interface DownloadJob {
   id: string
   fileId: number
-  status: "pending" | "checking" | "available" | "unavailable" | "downloading" | "completed" | "failed"
+  status: "pending" | "checking" | "available" | "unavailable" | "queued" | "processing" | "completed" | "failed"
+  progress: number
   traceId: string | null
   checkResult?: DownloadCheckResponse
-  downloadResult?: DownloadStartResponse
+  asyncResponse?: AsyncDownloadResponse
+  downloadUrl?: string
+  error?: string
   timestamp: Date
+  sseConnected: boolean
 }
 
 export function DownloadJobs() {
   const [fileIdInput, setFileIdInput] = useState("")
   const [jobs, setJobs] = useState<DownloadJob[]>([])
+  const [cleanupFunctions, setCleanupFunctions] = useState<Map<string, () => void>>(new Map())
+
+  // Cleanup SSE connections on unmount
+  useEffect(() => {
+    return () => {
+      cleanupFunctions.forEach((cleanup) => cleanup())
+    }
+  }, [cleanupFunctions])
+
+  const updateJob = useCallback((jobId: string, updates: Partial<DownloadJob>) => {
+    setJobs((prev) =>
+      prev.map((job) =>
+        job.id === jobId ? { ...job, ...updates } : job
+      )
+    )
+  }, [])
+
+  const subscribeToJob = useCallback((job: DownloadJob) => {
+    if (!job.asyncResponse) return
+
+    const cleanup = subscribeToJobUpdates(job.asyncResponse.jobId, {
+      onStatus: (data: SSEUpdate) => {
+        updateJob(job.id, {
+          status: (data.status as DownloadJob["status"]) ?? job.status,
+          progress: data.progress ?? job.progress,
+          sseConnected: true,
+        })
+      },
+      onProgress: (data: SSEUpdate) => {
+        updateJob(job.id, {
+          progress: data.progress ?? job.progress,
+          status: "processing",
+        })
+      },
+      onComplete: (data: SSEUpdate) => {
+        updateJob(job.id, {
+          status: "completed",
+          progress: 100,
+          downloadUrl: data.downloadUrl,
+          sseConnected: false,
+        })
+        // Remove cleanup function
+        setCleanupFunctions((prev) => {
+          const next = new Map(prev)
+          next.delete(job.id)
+          return next
+        })
+      },
+      onError: (data: SSEUpdate) => {
+        updateJob(job.id, {
+          status: "failed",
+          error: data.error,
+          sseConnected: false,
+        })
+        // Remove cleanup function
+        setCleanupFunctions((prev) => {
+          const next = new Map(prev)
+          next.delete(job.id)
+          return next
+        })
+      },
+      onHeartbeat: () => {
+        updateJob(job.id, { sseConnected: true })
+      },
+      onConnectionError: () => {
+        updateJob(job.id, { sseConnected: false })
+      },
+    })
+
+    // Store cleanup function
+    setCleanupFunctions((prev) => {
+      const next = new Map(prev)
+      next.set(job.id, cleanup)
+      return next
+    })
+
+    updateJob(job.id, { sseConnected: true })
+  }, [updateJob])
 
   const checkMutation = useMutation({
     mutationFn: (fileId: number) => checkDownload(fileId),
@@ -32,8 +121,10 @@ export function DownloadJobs() {
         id: jobId,
         fileId,
         status: "checking",
+        progress: 0,
         traceId: null,
         timestamp: new Date(),
+        sseConnected: false,
       }
       setJobs((prev) => [newJob, ...prev])
       return { jobId }
@@ -56,42 +147,40 @@ export function DownloadJobs() {
       setJobs((prev) =>
         prev.map((job) =>
           job.id === context?.jobId
-            ? { ...job, status: "failed" }
+            ? { ...job, status: "failed", error: "Check failed" }
             : job
         )
       )
     },
   })
 
-  const startMutation = useMutation({
-    mutationFn: (params: { jobId: string; fileId: number }) => startDownload(params.fileId),
+  const startAsyncMutation = useMutation({
+    mutationFn: ({ fileId }: { jobId: string; fileId: number }) => 
+      createAsyncDownload(fileId, crypto.randomUUID()),
     onMutate: ({ jobId }) => {
-      setJobs((prev) =>
-        prev.map((job) =>
-          job.id === jobId ? { ...job, status: "downloading" } : job
-        )
-      )
+      updateJob(jobId, { status: "queued", progress: 0 })
     },
     onSuccess: (result, { jobId }) => {
-      setJobs((prev) =>
-        prev.map((job) =>
-          job.id === jobId
-            ? {
-                ...job,
-                status: result.data.status === "completed" ? "completed" : "failed",
-                downloadResult: result.data,
-                traceId: result.traceId,
-              }
-            : job
-        )
-      )
+      const updatedJob: Partial<DownloadJob> = {
+        status: result.data.status === "queued" ? "queued" : "processing",
+        asyncResponse: result.data,
+        traceId: result.traceId,
+      }
+      updateJob(jobId, updatedJob)
+      
+      // Get the job and subscribe to SSE
+      setJobs((prev) => {
+        const job = prev.find((j) => j.id === jobId)
+        if (job) {
+          const updatedJobForSubscribe = { ...job, ...updatedJob }
+          // Use setTimeout to avoid state update during render
+          setTimeout(() => subscribeToJob(updatedJobForSubscribe), 0)
+        }
+        return prev
+      })
     },
-    onError: (_, { jobId }) => {
-      setJobs((prev) =>
-        prev.map((job) =>
-          job.id === jobId ? { ...job, status: "failed" } : job
-        )
-      )
+    onError: (_error, { jobId }) => {
+      updateJob(jobId, { status: "failed", error: "Failed to start download" })
     },
   })
 
@@ -112,25 +201,26 @@ export function DownloadJobs() {
   }
 
   const handleStartDownload = (jobId: string, fileId: number) => {
-    addBreadcrumb("Download started", "user_action", { jobId, fileId })
-    startMutation.mutate({ jobId, fileId })
+    addBreadcrumb("Async download started", "user_action", { jobId, fileId })
+    startAsyncMutation.mutate({ jobId, fileId })
   }
 
-  const getStatusBadge = (status: DownloadJob["status"]) => {
-    const variants: Record<DownloadJob["status"], { variant: "default" | "secondary" | "destructive" | "outline" | "success" | "warning"; icon: React.ReactNode }> = {
-      pending: { variant: "secondary", icon: null },
-      checking: { variant: "secondary", icon: <Loader2 className="h-3 w-3 animate-spin" /> },
-      available: { variant: "success", icon: <CheckCircle className="h-3 w-3" /> },
-      unavailable: { variant: "warning", icon: <AlertTriangle className="h-3 w-3" /> },
-      downloading: { variant: "default", icon: <Loader2 className="h-3 w-3 animate-spin" /> },
-      completed: { variant: "success", icon: <CheckCircle className="h-3 w-3" /> },
-      failed: { variant: "destructive", icon: <XCircle className="h-3 w-3" /> },
+  const getStatusBadge = (job: DownloadJob) => {
+    const statusConfig: Record<DownloadJob["status"], { variant: "default" | "secondary" | "destructive" | "outline" | "success" | "warning"; icon: React.ReactNode; label: string }> = {
+      pending: { variant: "secondary", icon: null, label: "PENDING" },
+      checking: { variant: "secondary", icon: <Loader2 className="h-3 w-3 animate-spin" />, label: "CHECKING" },
+      available: { variant: "success", icon: <CheckCircle className="h-3 w-3" />, label: "AVAILABLE" },
+      unavailable: { variant: "warning", icon: <AlertTriangle className="h-3 w-3" />, label: "UNAVAILABLE" },
+      queued: { variant: "secondary", icon: <Loader2 className="h-3 w-3 animate-spin" />, label: "QUEUED" },
+      processing: { variant: "default", icon: <Loader2 className="h-3 w-3 animate-spin" />, label: `${job.progress}%` },
+      completed: { variant: "success", icon: <CheckCircle className="h-3 w-3" />, label: "COMPLETED" },
+      failed: { variant: "destructive", icon: <XCircle className="h-3 w-3" />, label: "FAILED" },
     }
-    const { variant, icon } = variants[status]
+    const { variant, icon, label } = statusConfig[job.status]
     return (
       <Badge variant={variant} className="gap-1">
         {icon}
-        {status.toUpperCase()}
+        {label}
       </Badge>
     )
   }
@@ -143,7 +233,7 @@ export function DownloadJobs() {
           <CardTitle className="text-lg">Download Jobs</CardTitle>
         </div>
         <CardDescription>
-          Initiate and track file downloads
+          Initiate and track file downloads with real-time progress
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -217,12 +307,38 @@ export function DownloadJobs() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-sm">ID: {job.fileId}</span>
-                    {getStatusBadge(job.status)}
+                    {getStatusBadge(job)}
+                    {job.sseConnected && (
+                      <span title="Real-time connected">
+                        <Wifi className="h-3 w-3 text-success" />
+                      </span>
+                    )}
+                    {job.asyncResponse && !job.sseConnected && job.status !== "completed" && job.status !== "failed" && (
+                      <span title="Reconnecting...">
+                        <WifiOff className="h-3 w-3 text-muted-foreground" />
+                      </span>
+                    )}
                   </div>
                   <span className="text-xs text-muted-foreground">
                     {job.timestamp.toLocaleTimeString()}
                   </span>
                 </div>
+
+                {/* Progress Bar */}
+                {(job.status === "processing" || job.status === "queued") && (
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>Progress</span>
+                      <span>{job.progress}%</span>
+                    </div>
+                    <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-primary transition-all duration-300 ease-out"
+                        style={{ width: `${job.progress}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
 
                 {job.checkResult && (
                   <div className="text-xs text-muted-foreground">
@@ -236,20 +352,21 @@ export function DownloadJobs() {
                   </div>
                 )}
 
-                {job.downloadResult && (
-                  <div className="text-xs space-y-1">
-                    <p className="text-muted-foreground">{job.downloadResult.message}</p>
-                    {job.downloadResult.downloadUrl && (
-                      <a
-                        href={job.downloadResult.downloadUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-primary hover:underline"
-                      >
-                        Download Link <ExternalLink className="h-3 w-3" />
-                      </a>
-                    )}
+                {job.error && (
+                  <div className="text-xs text-destructive">
+                    Error: {job.error}
                   </div>
+                )}
+
+                {job.downloadUrl && (
+                  <a
+                    href={job.downloadUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-xs text-primary hover:underline"
+                  >
+                    Download File <ExternalLink className="h-3 w-3" />
+                  </a>
                 )}
 
                 {job.traceId && (
@@ -262,7 +379,7 @@ export function DownloadJobs() {
                   <Button
                     size="sm"
                     onClick={() => handleStartDownload(job.id, job.fileId)}
-                    disabled={startMutation.isPending}
+                    disabled={startAsyncMutation.isPending}
                   >
                     <Play className="h-3 w-3 mr-1" />
                     Start Download
@@ -276,4 +393,3 @@ export function DownloadJobs() {
     </Card>
   )
 }
-

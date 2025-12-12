@@ -70,8 +70,6 @@ services:
       - "4000:4000"
     volumes:
       - ../src:/app/src
-    env_file:
-      - ../.env
     environment:
       - NODE_ENV=development
       - PORT=4000
@@ -82,6 +80,7 @@ services:
       - S3_SECRET_ACCESS_KEY=minioadmin
       - S3_BUCKET_NAME=downloads
       - S3_FORCE_PATH_STYLE=true
+      - S3_REGION=us-east-1
       # Redis
       - REDIS_HOST=delineate-redis
       - REDIS_PORT=6379
@@ -90,6 +89,11 @@ services:
       - MAX_CONCURRENT_DOWNLOADS_PER_USER=3
       - JOB_TTL_SECONDS=86400
       - JOB_MAX_ATTEMPTS=3
+      # Rate Limiting
+      - REQUEST_TIMEOUT_MS=30000
+      - RATE_LIMIT_WINDOW_MS=60000
+      - RATE_LIMIT_MAX_REQUESTS=100
+      - CORS_ORIGINS=*
     depends_on:
       delineate-redis:
         condition: service_healthy
@@ -108,11 +112,9 @@ services:
       context: ..
       dockerfile: docker/Dockerfile.dev
     container_name: delineate-worker
-    command: node --env-file=.env --experimental-transform-types src/worker.ts
+    command: node --experimental-transform-types --watch src/worker.ts
     volumes:
       - ../src:/app/src
-    env_file:
-      - ../.env
     environment:
       - NODE_ENV=development
       # S3/MinIO
@@ -121,6 +123,7 @@ services:
       - S3_SECRET_ACCESS_KEY=minioadmin
       - S3_BUCKET_NAME=downloads
       - S3_FORCE_PATH_STYLE=true
+      - S3_REGION=us-east-1
       # Redis
       - REDIS_HOST=delineate-redis
       - REDIS_PORT=6379
@@ -129,6 +132,8 @@ services:
       - DOWNLOAD_DELAY_MIN_MS=5000
       - DOWNLOAD_DELAY_MAX_MS=30000
       - DOWNLOAD_DELAY_ENABLED=true
+      - JOB_TTL_SECONDS=86400
+      - JOB_MAX_ATTEMPTS=3
     depends_on:
       delineate-redis:
         condition: service_healthy
