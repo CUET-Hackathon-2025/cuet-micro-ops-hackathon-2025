@@ -10,9 +10,11 @@
       "cache": false
     },
     "lint": {},
+    "lint:fix": {},
+    "format": {},
+    "format:check": {},
     "check-types": {
       "dependsOn": ["^check-types"]
     }
   }
 }
-

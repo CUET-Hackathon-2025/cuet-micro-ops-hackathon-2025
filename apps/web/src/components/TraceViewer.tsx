@@ -26,9 +26,15 @@ export function TraceViewer() {
   };
 
   useEffect(() => {
-    refreshMetrics();
+    // Initial load - use setTimeout to avoid synchronous setState
+    const timeoutId = setTimeout(() => {
+      refreshMetrics();
+    }, 0);
     const interval = setInterval(refreshMetrics, 2000);
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(timeoutId);
+      clearInterval(interval);
+    };
   }, []);
 
   const handleCopy = async (traceId: string) => {

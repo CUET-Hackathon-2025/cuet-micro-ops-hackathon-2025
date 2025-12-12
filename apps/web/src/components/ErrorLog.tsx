@@ -22,9 +22,15 @@ export function ErrorLog() {
   };
 
   useEffect(() => {
-    refreshErrors();
+    // Initial load - use setTimeout to avoid synchronous setState
+    const timeoutId = setTimeout(() => {
+      refreshErrors();
+    }, 0);
     const interval = setInterval(refreshErrors, 2000);
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(timeoutId);
+      clearInterval(interval);
+    };
   }, []);
 
   const handleClear = () => {
