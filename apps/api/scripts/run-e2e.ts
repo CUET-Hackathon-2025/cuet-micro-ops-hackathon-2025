@@ -11,6 +11,7 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectDir = path.dirname(__dirname);
+const repoRoot = path.resolve(projectDir, "..", "..");
 
 async function fileExists(filePath: string): Promise<boolean> {
   try {
@@ -69,10 +70,10 @@ async function startServer(): Promise<ChildProcess> {
   console.log(`${colors.yellow}Starting server...${colors.reset}`);
 
   // Check if .env file exists, use --env-file only if it does
+  const envFilePath = path.join(repoRoot, ".env");
   const envFileArg =
-    process.env.CI !== "true" &&
-    (await fileExists(path.join(projectDir, ".env")))
-      ? ["--env-file=.env"]
+    process.env.CI !== "true" && (await fileExists(envFilePath))
+      ? [`--env-file=${path.relative(projectDir, envFilePath)}`]
       : [];
 
   const server = spawn(

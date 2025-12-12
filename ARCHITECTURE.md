@@ -2,88 +2,11 @@
 
 # Long-Running Download Architecture Design
 
-## Table of Contents
-
-- [The Problem](#the-problem)
-- [System Architecture](#system-architecture)
-- [Technical Approach](#technical-approach)
-- [Data Flow Diagrams](#data-flow-diagrams)
-- [Implementation Details](#implementation-details)
-- [Proxy Configuration](#proxy-configuration)
-- [Frontend Integration](#frontend-integration)
-- [Scenario-Based Q&A](#scenario-based-qa)
-- [Edge Cases & Operational Notes](#edge-cases--operational-notes)
-
----
-
 ## System Architecture
 
 ### Visual Representation
 
-```mermaid
-flowchart TB
-    subgraph clients [Client Layer]
-        Browser[Browser / React App]
-        Mobile[Mobile App]
-    end
-
-    subgraph clientside [Client-side Layer]
-        UI[React UI]
-        Updates[SSE (EventSource) + Polling Fallback]
-    end
-
-    subgraph proxy [Reverse Proxy Layer]
-        Nginx[nginx]
-    end
-
-    subgraph api [API Layer]
-        HonoAPI[Hono API Server + SSE Handler]
-    end
-
-    subgraph queue [Queue Layer]
-        BullMQ[BullMQ]
-        Redis[(Redis)]
-    end
-
-    subgraph workers [Worker Layer]
-        Worker1[Worker 1]
-        Worker2[Worker 2]
-        WorkerN[Worker N]
-    end
-
-    subgraph storage [Storage Layer]
-        MinIO[(MinIO S3)]
-    end
-
-    subgraph observability [Observability]
-        Sentry[Sentry]
-        Jaeger[Jaeger]
-    end
-
-    Browser -->|UI| UI
-    Mobile -->|UI| UI
-    UI -->|HTTP| Nginx
-    Updates -->|SSE/Polling| Nginx
-    Nginx -->|Proxy| HonoAPI
-
-    HonoAPI -->|Add Job| BullMQ
-    HonoAPI -->|Job Status| Redis
-
-    BullMQ --- Redis
-
-    Worker1 -->|Consume| BullMQ
-    Worker2 -->|Consume| BullMQ
-    WorkerN -->|Consume| BullMQ
-
-    Worker1 -->|Upload| MinIO
-    Worker2 -->|Upload| MinIO
-    WorkerN -->|Upload| MinIO
-
-    Worker1 -->|Progress| Redis
-
-    HonoAPI -->|Errors| Sentry
-    HonoAPI -->|Traces| Jaeger
-```
+![System Architecture](https://i.ibb.co.com/dSbdBBj/diagram-export-12-12-2025-5-13-42-PM.png)
 
 ### Component Overview
 
@@ -1037,6 +960,25 @@ Key: `idempotency:{key}` → jobId (TTL: 24h)
 2. API checks Redis for existing key
 3. If exists: return existing job (HTTP 200)
 4. If not: create job, store key, return HTTP 202
+
+---
+
+## CI/CD Pipeline
+
+```mermaid
+flowchart TD
+    subgraph ci [Continuous Integration]
+        A[Lint<br/>ESLint + Prettier] --> B[Test<br/>E2E with MinIO]
+        A --> C[Security<br/>CodeQL Scan]
+        B --> D[Build<br/>Push to GHCR]
+        C --> D
+    end
+
+    subgraph cd [Continuous Deployment]
+        D --> E[Notify<br/>Slack]
+        E -.->|Pull Model| F[Watchtower<br/>on VM<br/>Auto-deploy]
+    end
+```
 
 ---
 

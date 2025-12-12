@@ -2,11 +2,19 @@ FROM node:24-alpine
 
 WORKDIR /app
 
-COPY package*.json ./
+# Prepare workspace layout for caching installs
+RUN mkdir -p apps/api apps/web packages
 
+# Install dependencies
+COPY package.json package-lock.json turbo.json ./
+COPY apps/api/package.json apps/api/package.json
+COPY apps/web/package.json apps/web/package.json
 RUN npm install
 
+# Copy full repo
 COPY . .
+
+WORKDIR /app/apps/api
 
 EXPOSE 4000
 

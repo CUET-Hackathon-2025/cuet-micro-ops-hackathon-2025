@@ -69,7 +69,7 @@ services:
     ports:
       - "4000:4000"
     volumes:
-      - ../src:/app/src
+      - ../apps/api/src:/app/apps/api/src
     environment:
       - NODE_ENV=development
       - PORT=4000
@@ -114,7 +114,7 @@ services:
     container_name: delineate-worker
     command: node --experimental-transform-types --watch src/worker.ts
     volumes:
-      - ../src:/app/src
+      - ../apps/api/src:/app/apps/api/src
     environment:
       - NODE_ENV=development
       # S3/MinIO
@@ -159,15 +159,15 @@ services:
 
   delineate-frontend:
     build:
-      context: ../frontend
+      context: ../apps/web
       dockerfile: Dockerfile
       target: development
     container_name: delineate-frontend
     ports:
       - "5173:5173"
     volumes:
-      - ../frontend/src:/app/src
-      - ../frontend/index.html:/app/index.html
+      - ../apps/web/src:/app/src
+      - ../apps/web/index.html:/app/index.html
     environment:
       - VITE_API_URL=http://localhost:4000
       - VITE_SENTRY_DSN=${SENTRY_DSN:-}
