@@ -42,7 +42,7 @@ services:
 
   # Application
   app:
-    image: ghcr.io/say-m/cuet-micro-ops-hackathon-2025:latest
+    image: ghcr.io/cuet-hackathon-2025/cuet-micro-ops-hackathon-2025:latest
     container_name: delineate-app
     ports:
       - "3000:3000"

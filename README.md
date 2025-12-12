@@ -443,7 +443,7 @@ Errors in Sentry tagged with: trace_id=abc123
 
 ## CI/CD
 
-[![CI](https://github.com/Say-M/cuet-micro-ops-hackathon-2025/actions/workflows/ci.yml/badge.svg)](https://github.com/Say-M/cuet-micro-ops-hackathon-2025/actions/workflows/ci.yml)
+[![CI](https://github.com/CUET-Hackathon-2025/cuet-micro-ops-hackathon-2025/actions/workflows/ci.yml/badge.svg)](https://github.com/CUET-Hackathon-2025/cuet-micro-ops-hackathon-2025/actions/workflows/ci.yml)
 
 ### Pipeline Stages
 
