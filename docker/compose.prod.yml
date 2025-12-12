@@ -1,6 +1,24 @@
 name: delineate
 
 services:
+  # ============ Redis (Queue + Cache + Pub/Sub) ============
+  delineate-redis:
+    image: redis:7-alpine
+    container_name: delineate-redis-prod
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data-prod:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    networks:
+      - delineate-network
+    restart: unless-stopped
+
+  # ============ MinIO (S3-Compatible Storage) ============
   delineate-minio:
     image: minio/minio:latest
     container_name: delineate-minio-prod
@@ -23,6 +41,7 @@ services:
       - delineate-network
     restart: unless-stopped
 
+  # ============ MinIO Initialization ============
   delineate-minio-init:
     image: minio/mc:latest
     container_name: delineate-minio-init-prod
@@ -40,23 +59,49 @@ services:
     networks:
       - delineate-network
 
+  # ============ nginx Reverse Proxy ============
+  delineate-nginx:
+    image: nginx:alpine
+    container_name: delineate-nginx-prod
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - delineate-app
+    networks:
+      - delineate-network
+    restart: unless-stopped
+
+  # ============ API Server ============
   delineate-app:
     build:
       context: ..
       dockerfile: docker/Dockerfile.prod
     container_name: delineate-app-prod
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     env_file:
       - ../.env
     environment:
       - NODE_ENV=production
+      # S3/MinIO
       - S3_ENDPOINT=http://delineate-minio:9000
       - S3_ACCESS_KEY_ID=minioadmin
       - S3_SECRET_ACCESS_KEY=minioadmin
       - S3_BUCKET_NAME=downloads
       - S3_FORCE_PATH_STYLE=true
+      # Redis
+      - REDIS_HOST=delineate-redis
+      - REDIS_PORT=6379
+      # Job Configuration
+      - WORKER_CONCURRENCY=10
+      - MAX_CONCURRENT_DOWNLOADS_PER_USER=3
+      - JOB_TTL_SECONDS=86400
+      - JOB_MAX_ATTEMPTS=3
     depends_on:
+      delineate-redis:
+        condition: service_healthy
       delineate-minio:
         condition: service_healthy
       delineate-minio-init:
@@ -64,8 +109,60 @@ services:
     networks:
       - delineate-network
     restart: unless-stopped
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  # ============ Background Worker ============
+  delineate-worker:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.prod
+    container_name: delineate-worker-prod
+    command: node --experimental-transform-types src/worker.ts
+    env_file:
+      - ../.env
+    environment:
+      - NODE_ENV=production
+      # S3/MinIO
+      - S3_ENDPOINT=http://delineate-minio:9000
+      - S3_ACCESS_KEY_ID=minioadmin
+      - S3_SECRET_ACCESS_KEY=minioadmin
+      - S3_BUCKET_NAME=downloads
+      - S3_FORCE_PATH_STYLE=true
+      # Redis
+      - REDIS_HOST=delineate-redis
+      - REDIS_PORT=6379
+      # Worker Configuration
+      - WORKER_CONCURRENCY=10
+      - DOWNLOAD_DELAY_MIN_MS=10000
+      - DOWNLOAD_DELAY_MAX_MS=120000
+      - DOWNLOAD_DELAY_ENABLED=true
+    depends_on:
+      delineate-redis:
+        condition: service_healthy
+      delineate-minio:
+        condition: service_healthy
+      delineate-minio-init:
+        condition: service_completed_successfully
+    networks:
+      - delineate-network
+    restart: unless-stopped
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
 
 volumes:
+  redis-data-prod:
+    driver: local
   minio-data-prod:
     driver: local
 
