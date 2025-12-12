@@ -3,8 +3,18 @@ name: CI
 on:
   push:
     branches: [main, master]
+    paths-ignore:
+      - "*.md"
+      - "docs/**"
+      - ".gitignore"
+      - "LICENSE"
   pull_request:
     branches: [main, master]
+    paths-ignore:
+      - "*.md"
+      - "docs/**"
+      - ".gitignore"
+      - "LICENSE"
 
 permissions:
   contents: read
@@ -99,7 +109,7 @@ jobs:
   build:
     name: Build & Push Docker Image
     runs-on: ubuntu-24.04
-    needs: test
+    needs: [test, security]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -131,8 +141,12 @@ jobs:
           push: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: |
+            type=gha
+            type=registry,ref=ghcr.io/${{ github.repository }}:buildcache
+          cache-to: |
+            type=gha,mode=max
+            type=registry,ref=ghcr.io/${{ github.repository }}:buildcache,mode=max
 
   security:
     name: Security Scan
@@ -159,7 +173,7 @@ jobs:
   notify:
     name: Slack Notification
     runs-on: ubuntu-24.04
-    needs: [lint, test, build]
+    needs: [lint, test, build, security]
     if: always()
     steps:
       - name: Notify Slack on Success
