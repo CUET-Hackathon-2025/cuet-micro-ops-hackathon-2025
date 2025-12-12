@@ -1,33 +1,40 @@
-import { useState, useEffect } from "react"
-import { AlertCircle, Trash2, RefreshCw, ExternalLink } from "lucide-react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { getErrorLog, clearErrorLog, type ErrorLogEntry } from "@/lib/api"
+import { useState, useEffect } from "react";
+import { AlertCircle, Trash2, RefreshCw, ExternalLink } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { getErrorLog, clearErrorLog, type ErrorLogEntry } from "@/lib/api";
 
-const JAEGER_UI_URL = import.meta.env.VITE_JAEGER_UI_URL ?? "http://localhost:16686"
+const JAEGER_UI_URL =
+  import.meta.env.VITE_JAEGER_UI_URL ?? "http://localhost:16686";
 
 export function ErrorLog() {
-  const [errors, setErrors] = useState<ErrorLogEntry[]>([])
+  const [errors, setErrors] = useState<ErrorLogEntry[]>([]);
 
   const refreshErrors = () => {
-    setErrors(getErrorLog())
-  }
+    setErrors(getErrorLog());
+  };
 
   useEffect(() => {
-    refreshErrors()
-    const interval = setInterval(refreshErrors, 2000)
-    return () => clearInterval(interval)
-  }, [])
+    refreshErrors();
+    const interval = setInterval(refreshErrors, 2000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleClear = () => {
-    clearErrorLog()
-    setErrors([])
-  }
+    clearErrorLog();
+    setErrors([]);
+  };
 
   const getJaegerLink = (traceId: string) => {
-    return `${JAEGER_UI_URL}/trace/${traceId}`
-  }
+    return `${JAEGER_UI_URL}/trace/${traceId}`;
+  };
 
   return (
     <Card>
@@ -46,21 +53,26 @@ export function ErrorLog() {
             <Button variant="ghost" size="icon" onClick={refreshErrors}>
               <RefreshCw className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={handleClear} disabled={errors.length === 0}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleClear}
+              disabled={errors.length === 0}
+            >
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
         </div>
-        <CardDescription>
-          Recent errors captured by Sentry
-        </CardDescription>
+        <CardDescription>Recent errors captured by Sentry</CardDescription>
       </CardHeader>
       <CardContent>
         {errors.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
             <p className="text-sm">No errors captured yet</p>
-            <p className="text-xs mt-1">Errors will appear here when they occur</p>
+            <p className="text-xs mt-1">
+              Errors will appear here when they occur
+            </p>
           </div>
         ) : (
           <div className="space-y-2 max-h-[300px] overflow-y-auto">
@@ -89,7 +101,7 @@ export function ErrorLog() {
                     {error.timestamp.toLocaleTimeString()}
                   </span>
                 </div>
-                
+
                 {error.traceId && (
                   <div className="flex items-center justify-between pt-2 border-t border-border/50">
                     <code className="text-xs font-mono text-muted-foreground">
@@ -111,6 +123,5 @@ export function ErrorLog() {
         )}
       </CardContent>
     </Card>
-  )
+  );
 }
-

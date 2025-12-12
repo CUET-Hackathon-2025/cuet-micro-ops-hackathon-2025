@@ -122,4 +122,3 @@ healthRouter.openapi(queueStatsRoute, async (c) => {
 });
 
 export { healthRouter };
-

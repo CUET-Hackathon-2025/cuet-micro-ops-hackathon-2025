@@ -1,52 +1,61 @@
-import { useState, useEffect } from "react"
-import { Network, ExternalLink, Copy, Check, RefreshCw } from "lucide-react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { getMetrics, type ApiMetrics } from "@/lib/api"
-import { cn } from "@/lib/utils"
+import { useState, useEffect } from "react";
+import { Network, ExternalLink, Copy, Check, RefreshCw } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { getMetrics, type ApiMetrics } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
-const JAEGER_UI_URL = import.meta.env.VITE_JAEGER_UI_URL ?? "http://localhost:16686"
+const JAEGER_UI_URL =
+  import.meta.env.VITE_JAEGER_UI_URL ?? "http://localhost:16686";
 
 export function TraceViewer() {
-  const [metrics, setMetrics] = useState<ApiMetrics[]>([])
-  const [traceIdInput, setTraceIdInput] = useState("")
-  const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [metrics, setMetrics] = useState<ApiMetrics[]>([]);
+  const [traceIdInput, setTraceIdInput] = useState("");
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const refreshMetrics = () => {
-    setMetrics(getMetrics().filter((m) => m.traceId))
-  }
+    setMetrics(getMetrics().filter((m) => m.traceId));
+  };
 
   useEffect(() => {
-    refreshMetrics()
-    const interval = setInterval(refreshMetrics, 2000)
-    return () => clearInterval(interval)
-  }, [])
+    refreshMetrics();
+    const interval = setInterval(refreshMetrics, 2000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleCopy = async (traceId: string) => {
-    await navigator.clipboard.writeText(traceId)
-    setCopiedId(traceId)
-    setTimeout(() => setCopiedId(null), 2000)
-  }
+    await navigator.clipboard.writeText(traceId);
+    setCopiedId(traceId);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
 
   const getJaegerLink = (traceId: string) => {
-    return `${JAEGER_UI_URL}/trace/${traceId}`
-  }
+    return `${JAEGER_UI_URL}/trace/${traceId}`;
+  };
 
   const openJaegerSearch = () => {
     if (traceIdInput.trim()) {
-      window.open(getJaegerLink(traceIdInput.trim()), "_blank")
+      window.open(getJaegerLink(traceIdInput.trim()), "_blank");
     }
-  }
+  };
 
   // Get unique traces (most recent per trace ID)
-  const uniqueTraces = metrics.reduce((acc, metric) => {
-    if (metric.traceId && !acc.find((m) => m.traceId === metric.traceId)) {
-      acc.push(metric)
-    }
-    return acc
-  }, [] as ApiMetrics[]).slice(0, 10)
+  const uniqueTraces = metrics
+    .reduce((acc, metric) => {
+      if (metric.traceId && !acc.find((m) => m.traceId === metric.traceId)) {
+        acc.push(metric);
+      }
+      return acc;
+    }, [] as ApiMetrics[])
+    .slice(0, 10);
 
   return (
     <Card>
@@ -60,11 +69,7 @@ export function TraceViewer() {
             <Button variant="ghost" size="icon" onClick={refreshMetrics}>
               <RefreshCw className="h-4 w-4" />
             </Button>
-            <a
-              href={JAEGER_UI_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
+            <a href={JAEGER_UI_URL} target="_blank" rel="noopener noreferrer">
               <Button variant="outline" size="sm">
                 <ExternalLink className="h-4 w-4 mr-1" />
                 Jaeger UI
@@ -101,7 +106,9 @@ export function TraceViewer() {
             <div className="text-center py-6 text-muted-foreground">
               <Network className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p className="text-sm">No traces captured yet</p>
-              <p className="text-xs mt-1">Make API requests to see traces here</p>
+              <p className="text-xs mt-1">
+                Make API requests to see traces here
+              </p>
             </div>
           ) : (
             <div className="space-y-2 max-h-[250px] overflow-y-auto">
@@ -111,12 +118,15 @@ export function TraceViewer() {
                   className={cn(
                     "p-3 rounded-lg border border-border bg-card/50 space-y-2",
                     metric.success && "border-l-4 border-l-success",
-                    !metric.success && "border-l-4 border-l-destructive"
+                    !metric.success && "border-l-4 border-l-destructive",
                   )}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Badge variant={metric.success ? "success" : "destructive"} className="text-xs">
+                      <Badge
+                        variant={metric.success ? "success" : "destructive"}
+                        className="text-xs"
+                      >
                         {metric.status || "ERR"}
                       </Badge>
                       <span className="text-sm font-medium">
@@ -167,6 +177,5 @@ export function TraceViewer() {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
-

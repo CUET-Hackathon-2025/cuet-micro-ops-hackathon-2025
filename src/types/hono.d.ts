@@ -6,4 +6,3 @@ declare module "hono" {
     sentry: Toucan;
   }
 }
-

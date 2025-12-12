@@ -1,26 +1,39 @@
-import * as Sentry from "@sentry/react"
-import { AlertTriangle, RefreshCw, MessageSquare } from "lucide-react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { showFeedbackDialog } from "@/lib/sentry"
+import * as Sentry from "@sentry/react";
+import { AlertTriangle, RefreshCw, MessageSquare } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { showFeedbackDialog } from "@/lib/sentry";
 
 interface FallbackProps {
-  error: unknown
-  componentStack: string | null
-  eventId: string | null
-  resetError: () => void
+  error: unknown;
+  componentStack: string | null;
+  eventId: string | null;
+  resetError: () => void;
 }
 
-function ErrorFallback({ error, componentStack, eventId, resetError }: FallbackProps) {
-  const errorMessage = error instanceof Error ? error.message : String(error)
-  
+function ErrorFallback({
+  error,
+  componentStack,
+  eventId,
+  resetError,
+}: FallbackProps) {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="max-w-lg w-full border-destructive/50">
         <CardHeader>
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-6 w-6 text-destructive" />
-            <CardTitle className="text-destructive">Something went wrong</CardTitle>
+            <CardTitle className="text-destructive">
+              Something went wrong
+            </CardTitle>
           </div>
           <CardDescription>
             An unexpected error occurred. Our team has been notified.
@@ -65,11 +78,11 @@ function ErrorFallback({ error, componentStack, eventId, resetError }: FallbackP
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
 
 interface ErrorBoundaryProps {
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 export function ErrorBoundary({ children }: ErrorBoundaryProps) {
@@ -87,6 +100,5 @@ export function ErrorBoundary({ children }: ErrorBoundaryProps) {
     >
       {children}
     </Sentry.ErrorBoundary>
-  )
+  );
 }
-

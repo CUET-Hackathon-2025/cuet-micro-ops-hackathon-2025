@@ -151,7 +151,7 @@ services:
     container_name: delineate-jaeger
     ports:
       - "16686:16686" # Web UI
-      - "4318:4318"   # OTLP HTTP
+      - "4318:4318" # OTLP HTTP
     environment:
       - COLLECTOR_OTLP_ENABLED=true
     networks:

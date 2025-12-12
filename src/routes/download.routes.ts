@@ -546,7 +546,10 @@ downloadRouter.openapi(sseSubscribeRoute, async (c) => {
           eventType = "complete";
         } else if (update.status === "failed") {
           eventType = "error";
-        } else if (update.status === "queued" || update.status === "processing") {
+        } else if (
+          update.status === "queued" ||
+          update.status === "processing"
+        ) {
           eventType = "status";
         }
 

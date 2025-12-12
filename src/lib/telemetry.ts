@@ -22,4 +22,3 @@ export const shutdownTelemetry = async () => {
   await otelSDK.shutdown();
   console.log("[OpenTelemetry] SDK shut down");
 };
-

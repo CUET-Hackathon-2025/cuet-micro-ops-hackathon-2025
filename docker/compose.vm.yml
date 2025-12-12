@@ -70,6 +70,20 @@ services:
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
 
+  # Frontend
+  frontend:
+    image: ghcr.io/cuet-hackathon-2025/cuet-micro-ops-hackathon-2025-frontend:latest
+    container_name: delineate-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - app
+    restart: unless-stopped
+    networks:
+      - delineate-network
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
   # Watchtower - Auto-updates containers when new images are available
   watchtower:
     image: containrrr/watchtower:latest
