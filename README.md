@@ -441,6 +441,53 @@ Errors in Sentry tagged with: trace_id=abc123
 - **Error Tracking**: Sentry
 - **Documentation**: Scalar OpenAPI UI
 
+## CI/CD
+
+[![CI](https://github.com/Say-M/cuet-micro-ops-hackathon-2025/actions/workflows/ci.yml/badge.svg)](https://github.com/Say-M/cuet-micro-ops-hackathon-2025/actions/workflows/ci.yml)
+
+### Pipeline Stages
+
+```
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│    Lint     │───▶│    Test     │───▶│    Build    │
+│  (ESLint +  │    │   (E2E +    │    │  (Docker)   │
+│  Prettier)  │    │   MinIO)    │    │             │
+└─────────────┘    └─────────────┘    └─────────────┘
+```
+
+| Stage | Description                               |
+| ----- | ----------------------------------------- |
+| Lint  | ESLint + Prettier format check            |
+| Test  | E2E tests with MinIO storage              |
+| Build | Docker image build with GHA layer caching |
+
+### Running Tests Locally
+
+Before pushing, ensure your changes pass all checks:
+
+```bash
+# Lint and format check
+npm run lint
+npm run format:check
+
+# E2E tests (requires S3 storage)
+# Option 1: Use Docker Compose (starts MinIO automatically)
+npm run docker:dev
+
+# Option 2: Run tests against your local Docker stack
+npm run test:e2e
+```
+
+### For Contributors
+
+1. Create a feature branch from `main`
+2. Make your changes
+3. Run `npm run lint` and `npm run format:check`
+4. Push and create a Pull Request
+5. CI pipeline runs automatically on PRs
+
+---
+
 ## Quick Start
 
 ### Local Development
