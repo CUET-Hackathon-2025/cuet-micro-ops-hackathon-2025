@@ -120,6 +120,10 @@ jobs:
     name: Security Scan
     runs-on: ubuntu-24.04
     needs: lint
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -137,7 +141,7 @@ jobs:
   notify:
     name: Slack Notification
     runs-on: ubuntu-24.04
-    needs: [lint, test, build, security]
+    needs: [lint, test, build]
     if: always()
     steps:
       - name: Notify Slack on Success
