@@ -280,12 +280,20 @@ process.on("uncaughtException", (error: Error) => {
 });
 
 // Handle unhandled promise rejections - log and exit gracefully
-process.on("unhandledRejection", (reason: unknown, promise: Promise<unknown>) => {
-  console.error("[Server] Unhandled Rejection at:", promise, "reason:", reason);
-  // Attempt graceful shutdown before exiting
-  if (!isShuttingDown) {
-    shutdown("unhandledRejection");
-  } else {
-    process.exit(1);
-  }
-});
+process.on(
+  "unhandledRejection",
+  (reason: unknown, promise: Promise<unknown>) => {
+    console.error(
+      "[Server] Unhandled Rejection at:",
+      promise,
+      "reason:",
+      reason,
+    );
+    // Attempt graceful shutdown before exiting
+    if (!isShuttingDown) {
+      shutdown("unhandledRejection");
+    } else {
+      process.exit(1);
+    }
+  },
+);
