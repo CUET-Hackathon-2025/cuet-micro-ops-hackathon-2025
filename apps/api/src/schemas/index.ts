@@ -119,7 +119,10 @@ export const AsyncDownloadResponseSchema = z
     isNew: z
       .boolean()
       .openapi({ description: "Whether this is a new job or existing one" }),
-    createdAt: z.number().int().openapi({ description: "Unix timestamp in ms" }),
+    createdAt: z
+      .number()
+      .int()
+      .openapi({ description: "Unix timestamp in ms" }),
     statusUrl: z.string().openapi({ description: "URL to poll for status" }),
     subscribeUrl: z.string().openapi({ description: "SSE subscription URL" }),
   })
@@ -139,7 +142,9 @@ export const JobStatusResponseSchema = z
       .string()
       .nullable()
       .openapi({ description: "Error message when failed" }),
-    canRetry: z.boolean().openapi({ description: "Whether job can be retried" }),
+    canRetry: z
+      .boolean()
+      .openapi({ description: "Whether job can be retried" }),
     createdAt: z.number().int(),
     updatedAt: z.number().int(),
   })

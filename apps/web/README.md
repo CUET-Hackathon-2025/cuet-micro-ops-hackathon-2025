@@ -1,6 +1,7 @@
 # Observability Dashboard
 
-A React dashboard for monitoring the Download Service with Sentry error tracking and OpenTelemetry distributed tracing.
+A React dashboard for monitoring the Download Service with Sentry error tracking
+and OpenTelemetry distributed tracing.
 
 ## Features
 
@@ -91,7 +92,8 @@ The dashboard will be available at http://localhost:5173
 
 ### Trace Propagation
 
-The dashboard automatically propagates W3C Trace Context (`traceparent` header) to the backend API. This enables:
+The dashboard automatically propagates W3C Trace Context (`traceparent` header)
+to the backend API. This enables:
 
 - End-to-end distributed tracing
 - Correlation between frontend and backend spans
@@ -132,6 +134,7 @@ docker compose -f docker/compose.dev.yml up --build
 ```
 
 This starts:
+
 - **Frontend**: http://localhost:5173
 - **Backend API**: http://localhost:3000
 - **Jaeger UI**: http://localhost:16686
@@ -194,12 +197,12 @@ frontend/
 
 ## Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `VITE_API_URL` | Backend API URL | `http://localhost:3000` |
-| `VITE_SENTRY_DSN` | Sentry DSN for error tracking | (empty) |
-| `VITE_OTEL_EXPORTER_URL` | OTLP HTTP exporter URL | `http://localhost:4318` |
-| `VITE_JAEGER_UI_URL` | Jaeger UI URL for trace links | `http://localhost:16686` |
+| Variable                 | Description                   | Default                  |
+| ------------------------ | ----------------------------- | ------------------------ |
+| `VITE_API_URL`           | Backend API URL               | `http://localhost:3000`  |
+| `VITE_SENTRY_DSN`        | Sentry DSN for error tracking | (empty)                  |
+| `VITE_OTEL_EXPORTER_URL` | OTLP HTTP exporter URL        | `http://localhost:4318`  |
+| `VITE_JAEGER_UI_URL`     | Jaeger UI URL for trace links | `http://localhost:16686` |
 
 ## Troubleshooting
 
@@ -219,6 +222,7 @@ frontend/
 ### CORS Issues
 
 The backend API must allow:
+
 - Origin: `http://localhost:5173` (or your frontend URL)
 - Headers: `traceparent`, `Content-Type`
 

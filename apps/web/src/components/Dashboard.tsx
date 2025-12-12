@@ -1,9 +1,9 @@
-import { Activity, Github } from "lucide-react"
-import { HealthStatus } from "./HealthStatus"
-import { DownloadJobs } from "./DownloadJobs"
-import { ErrorLog } from "./ErrorLog"
-import { TraceViewer } from "./TraceViewer"
-import { PerformanceMetrics } from "./PerformanceMetrics"
+import { Activity, Github } from "lucide-react";
+import { HealthStatus } from "./HealthStatus";
+import { DownloadJobs } from "./DownloadJobs";
+import { ErrorLog } from "./ErrorLog";
+import { TraceViewer } from "./TraceViewer";
+import { PerformanceMetrics } from "./PerformanceMetrics";
 
 export function Dashboard() {
   return (
@@ -89,7 +89,9 @@ export function Dashboard() {
               API Docs
             </a>
             <a
-              href={import.meta.env.VITE_JAEGER_UI_URL ?? "http://localhost:16686"}
+              href={
+                import.meta.env.VITE_JAEGER_UI_URL ?? "http://localhost:16686"
+              }
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-primary transition-colors"
@@ -111,6 +113,5 @@ export function Dashboard() {
         </footer>
       </main>
     </div>
-  )
+  );
 }
-

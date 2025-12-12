@@ -106,4 +106,3 @@ export const closeS3 = () => {
   s3Client.destroy();
   console.log("[S3] Client destroyed");
 };
-

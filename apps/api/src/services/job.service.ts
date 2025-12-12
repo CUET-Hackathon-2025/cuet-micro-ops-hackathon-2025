@@ -80,7 +80,9 @@ export const createJob = async (
   });
   await redis.expire(key, env.JOB_TTL_SECONDS);
 
-  console.log(`[JobService] Created job ${jobId} for file_id=${fileId.toString()}`);
+  console.log(
+    `[JobService] Created job ${jobId} for file_id=${fileId.toString()}`,
+  );
   return job;
 };
 
@@ -252,7 +254,9 @@ export const checkUserRateLimit = async (
 };
 
 // Rate limiting: increment user active jobs
-export const incrementUserActiveJobs = async (userId: string): Promise<void> => {
+export const incrementUserActiveJobs = async (
+  userId: string,
+): Promise<void> => {
   const key = RedisKeys.userActiveJobs(userId);
   await redis.incr(key);
   // Set TTL for safety (in case decrement fails)
@@ -260,7 +264,9 @@ export const incrementUserActiveJobs = async (userId: string): Promise<void> => 
 };
 
 // Rate limiting: decrement user active jobs
-export const decrementUserActiveJobs = async (userId: string): Promise<void> => {
+export const decrementUserActiveJobs = async (
+  userId: string,
+): Promise<void> => {
   const key = RedisKeys.userActiveJobs(userId);
   const current = await redis.decr(key);
   // Clean up if count reaches 0 or goes negative

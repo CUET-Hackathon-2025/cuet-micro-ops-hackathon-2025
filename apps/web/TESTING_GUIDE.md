@@ -11,13 +11,13 @@ docker compose -f docker/compose.dev.yml up --build
 
 Wait for all services to start (watch the logs), then access:
 
-| Service | URL | Description |
-|---------|-----|-------------|
-| **Frontend Dashboard** | http://localhost:5173 | React observability dashboard |
-| **Backend API** | http://localhost:4000 | Hono API server |
-| **API Docs** | http://localhost:4000/docs | OpenAPI documentation |
-| **Jaeger UI** | http://localhost:16686 | Distributed tracing |
-| **MinIO Console** | http://localhost:9001 | S3 storage (user: minioadmin, pass: minioadmin) |
+| Service                | URL                        | Description                                     |
+| ---------------------- | -------------------------- | ----------------------------------------------- |
+| **Frontend Dashboard** | http://localhost:5173      | React observability dashboard                   |
+| **Backend API**        | http://localhost:4000      | Hono API server                                 |
+| **API Docs**           | http://localhost:4000/docs | OpenAPI documentation                           |
+| **Jaeger UI**          | http://localhost:16686     | Distributed tracing                             |
+| **MinIO Console**      | http://localhost:9001      | S3 storage (user: minioadmin, pass: minioadmin) |
 
 ---
 
@@ -28,6 +28,7 @@ Wait for all services to start (watch the logs), then access:
 **Location:** Top-left card on dashboard
 
 **What it shows:**
+
 - Real-time API health from `/health` endpoint
 - Storage status (MinIO/S3)
 - Redis connection status
@@ -35,6 +36,7 @@ Wait for all services to start (watch the logs), then access:
 - Trace ID for each health check
 
 **How to test:**
+
 1. Open the dashboard at http://localhost:5173
 2. Verify "HEALTHY" badge is green
 3. Verify "Storage: OK" is shown
@@ -43,6 +45,7 @@ Wait for all services to start (watch the logs), then access:
 6. Check that trace ID changes with each request
 
 **Verify via cURL:**
+
 ```bash
 curl http://localhost:4000/health
 # Expected: {"status":"healthy","checks":{"storage":"ok","redis":"ok"}}
@@ -55,17 +58,20 @@ curl http://localhost:4000/health
 **Location:** Center-right panel on dashboard
 
 **What it shows:**
+
 - File availability checker
 - Download job queue with real-time progress
 - SSE (Server-Sent Events) connection status
 - Trace IDs for correlation
 
 **Test 1: Check File Availability**
+
 1. Enter file ID: `70007` (files divisible by 7 are mock-available)
 2. Click "Check" button
 3. Status should show "AVAILABLE" with file size
 
 **Test 2: Start Download with Real-Time Progress**
+
 1. After checking a file that shows "AVAILABLE"
 2. Click "Start Download" button
 3. Watch the progress bar fill up in real-time
@@ -73,11 +79,13 @@ curl http://localhost:4000/health
 5. Download completes with download link
 
 **Test 3: Test Unavailable File**
+
 1. Enter file ID: `70001` (not divisible by 7)
 2. Click "Check" button
 3. Status should show "UNAVAILABLE"
 
 **Test 4: Multiple Downloads**
+
 - Try starting multiple downloads simultaneously
 - Each shows independent progress
 - Rate limiting kicks in after 3 concurrent downloads
@@ -89,17 +97,20 @@ curl http://localhost:4000/health
 **Location:** Bottom-left panel
 
 **What it shows:**
+
 - Recent errors captured by Sentry
 - Error message, endpoint, status code
 - Trace ID for Jaeger correlation
 
 **How to test:**
+
 1. In Download Jobs panel, click "Trigger Error" button
 2. Error should appear in Error Log
 3. Shows "Sentry test error triggered for file_id=70000"
 4. Click trace ID link to view in Jaeger
 
 **Verify error in Sentry (if configured):**
+
 1. Log into your Sentry dashboard
 2. Navigate to Issues
 3. Find "Sentry test error triggered" error
@@ -112,12 +123,14 @@ curl http://localhost:4000/health
 **Location:** Bottom-center panel
 
 **What it shows:**
+
 - Recent trace IDs from API calls
 - Response time for each request
 - Success/failure status
 - Links to view traces in Jaeger
 
 **How to test:**
+
 1. Make some API requests (health check, download check)
 2. Traces appear in the list
 3. Click copy icon to copy trace ID
@@ -125,6 +138,7 @@ curl http://localhost:4000/health
 5. In Jaeger, verify you see both frontend and backend spans
 
 **Verify trace propagation:**
+
 1. Open browser DevTools → Network tab
 2. Click "Check" on a file ID
 3. Find the POST request
@@ -139,6 +153,7 @@ curl http://localhost:4000/health
 **Location:** Bottom-right panel
 
 **What it shows:**
+
 - Total request count
 - Success rate percentage
 - Average response time
@@ -146,6 +161,7 @@ curl http://localhost:4000/health
 - Per-endpoint breakdown with bar chart
 
 **How to test:**
+
 1. Make several API requests
 2. Watch metrics update in real-time
 3. Verify success rate calculation
@@ -159,6 +175,7 @@ curl http://localhost:4000/health
 This is the key feature for the hackathon challenge!
 
 ### Flow:
+
 ```
 User clicks "Check" button
         │
@@ -184,9 +201,11 @@ Errors in Sentry tagged with: trace_id=abc123
 3. **Find the request** to `/v1/download/check`
 
 4. **Verify `traceparent` header:**
+
    ```
    traceparent: 00-abc123def456...-789xyz...-01
    ```
+
    - First part (00) = version
    - Second part = trace ID
    - Third part = span ID
@@ -210,11 +229,13 @@ Errors in Sentry tagged with: trace_id=abc123
 ## API Endpoints Reference
 
 ### Health Check
+
 ```bash
 curl http://localhost:4000/health
 ```
 
 ### Check File Availability
+
 ```bash
 curl -X POST http://localhost:4000/v1/download/check \
   -H "Content-Type: application/json" \
@@ -222,6 +243,7 @@ curl -X POST http://localhost:4000/v1/download/check \
 ```
 
 ### Trigger Sentry Error
+
 ```bash
 curl -X POST "http://localhost:4000/v1/download/check?sentry_test=true" \
   -H "Content-Type: application/json" \
@@ -229,6 +251,7 @@ curl -X POST "http://localhost:4000/v1/download/check?sentry_test=true" \
 ```
 
 ### Create Async Download Job
+
 ```bash
 curl -X POST http://localhost:4000/v1/download \
   -H "Content-Type: application/json" \
@@ -237,11 +260,13 @@ curl -X POST http://localhost:4000/v1/download \
 ```
 
 ### Get Job Status
+
 ```bash
 curl http://localhost:4000/v1/download/status/{jobId}
 ```
 
 ### Subscribe to Job Updates (SSE)
+
 ```bash
 curl -N http://localhost:4000/v1/download/subscribe/{jobId}
 ```
@@ -251,26 +276,31 @@ curl -N http://localhost:4000/v1/download/subscribe/{jobId}
 ## Troubleshooting
 
 ### "Failed to fetch" errors
+
 - Backend not running or wrong port
 - Check: `curl http://localhost:4000/health`
 - Verify port in Docker logs
 
 ### Worker keeps crashing
+
 - Missing environment variables
 - Check Docker Compose logs for delineate-worker
 - Ensure Redis is healthy
 
 ### SSE not connecting
+
 - CORS issues - check browser console
 - Backend SSE endpoint not working
 - Try polling fallback: `/v1/download/status/:jobId`
 
 ### Traces not in Jaeger
+
 - Jaeger not running: http://localhost:16686
 - OTEL exporter URL wrong
 - Check: `docker logs delineate-jaeger`
 
 ### Sentry errors not appearing
+
 - DSN not configured
 - Check browser console for Sentry init messages
 - Errors batch-sent, wait a few seconds
@@ -279,22 +309,21 @@ curl -N http://localhost:4000/v1/download/subscribe/{jobId}
 
 ## Challenge Requirements Checklist
 
-| Requirement | Status | How to Verify |
-|-------------|--------|---------------|
-| React app with Vite | ✅ | `frontend/` directory |
-| Sentry ErrorBoundary | ✅ | `ErrorBoundary.tsx` wraps app |
-| Sentry error capture | ✅ | "Trigger Error" → Error Log |
-| User feedback dialog | ✅ | Error boundary has feedback button |
-| Performance monitoring | ✅ | BrowserTracing in `sentry.ts` |
-| OpenTelemetry traces | ✅ | `tracing.ts` with fetch instrumentation |
-| Trace propagation | ✅ | `traceparent` header in requests |
-| Trace correlation | ✅ | Same trace ID in Jaeger |
-| Trace ID in UI | ✅ | Shown in all panels |
-| Health Status | ✅ | Real-time /health polling |
-| Download Jobs | ✅ | Progress bar, SSE updates |
-| Error Log | ✅ | Errors with trace links |
-| Trace Viewer | ✅ | Jaeger links, copy trace ID |
-| Performance Metrics | ✅ | Response times, success rates |
-| Docker Compose | ✅ | Frontend service added |
-| Documentation | ✅ | README + this guide |
-
+| Requirement            | Status | How to Verify                           |
+| ---------------------- | ------ | --------------------------------------- |
+| React app with Vite    | ✅     | `frontend/` directory                   |
+| Sentry ErrorBoundary   | ✅     | `ErrorBoundary.tsx` wraps app           |
+| Sentry error capture   | ✅     | "Trigger Error" → Error Log             |
+| User feedback dialog   | ✅     | Error boundary has feedback button      |
+| Performance monitoring | ✅     | BrowserTracing in `sentry.ts`           |
+| OpenTelemetry traces   | ✅     | `tracing.ts` with fetch instrumentation |
+| Trace propagation      | ✅     | `traceparent` header in requests        |
+| Trace correlation      | ✅     | Same trace ID in Jaeger                 |
+| Trace ID in UI         | ✅     | Shown in all panels                     |
+| Health Status          | ✅     | Real-time /health polling               |
+| Download Jobs          | ✅     | Progress bar, SSE updates               |
+| Error Log              | ✅     | Errors with trace links                 |
+| Trace Viewer           | ✅     | Jaeger links, copy trace ID             |
+| Performance Metrics    | ✅     | Response times, success rates           |
+| Docker Compose         | ✅     | Frontend service added                  |
+| Documentation          | ✅     | README + this guide                     |
