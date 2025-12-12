@@ -2,7 +2,8 @@
 
 ## The Scenario
 
-This microservice simulates a **real-world file download system** where processing times vary significantly:
+This microservice simulates a **real-world file download system** where
+processing times vary significantly:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -16,7 +17,8 @@ This microservice simulates a **real-world file download system** where processi
 
 **Why does this matter?**
 
-When you deploy this service behind a reverse proxy (Cloudflare, nginx, AWS ALB), you'll encounter:
+When you deploy this service behind a reverse proxy (Cloudflare, nginx, AWS
+ALB), you'll encounter:
 
 | Problem                 | Impact                                        |
 | ----------------------- | --------------------------------------------- |
@@ -40,7 +42,8 @@ curl -X POST http://localhost:3000/v1/download/start \
 # [Download] Starting file_id=70000 | delay=85.3s (range: 10s-120s) | enabled=true
 ```
 
-**Your challenge:** Design solutions that handle these variable processing times gracefully!
+**Your challenge:** Design solutions that handle these variable processing times
+gracefully!
 
 ---
 
@@ -60,9 +63,12 @@ curl -X POST http://localhost:3000/v1/download/start \
 
 #### Your Mission
 
-The current Docker configuration does not include a self-hosted S3-compatible storage service. Your challenge is to:
+The current Docker configuration does not include a self-hosted S3-compatible
+storage service. Your challenge is to:
 
-1. **Modify the Docker Compose files** (`docker/compose.dev.yml` and/or `docker/compose.prod.yml`) to include a self-hosted S3-compatible storage service
+1. **Modify the Docker Compose files** (`docker/compose.dev.yml` and/or
+   `docker/compose.prod.yml`) to include a self-hosted S3-compatible storage
+   service
 2. **Configure the API** to connect to your storage service
 3. **Verify** the health endpoint returns `"storage": "ok"`
 
@@ -70,11 +76,13 @@ The current Docker configuration does not include a self-hosted S3-compatible st
 
 ##### Option 1: RustFS (Recommended)
 
-[RustFS](https://github.com/rustfs/rustfs) is a lightweight, high-performance S3-compatible object storage written in Rust.
+[RustFS](https://github.com/rustfs/rustfs) is a lightweight, high-performance
+S3-compatible object storage written in Rust.
 
 ##### Option 2: MinIO
 
-[MinIO](https://min.io) is a popular, production-ready S3-compatible object storage.
+[MinIO](https://min.io) is a popular, production-ready S3-compatible object
+storage.
 
 #### Requirements
 
@@ -85,7 +93,8 @@ Your solution must:
 - [ ] Configure proper networking between services
 - [ ] Update environment variables to connect the API to storage
 - [ ] Pass all E2E tests (`npm run test:e2e`)
-- [ ] Health endpoint must return `{"status": "healthy", "checks": {"storage": "ok"}}`
+- [ ] Health endpoint must return
+      `{"status": "healthy", "checks": {"storage": "ok"}}`
 
 #### Hints
 
@@ -123,17 +132,24 @@ curl -X POST http://localhost:3000/v1/download/check \
 
 #### The Problem
 
-This microservice handles file downloads that can vary significantly in processing time:
+This microservice handles file downloads that can vary significantly in
+processing time:
 
 - **Fast downloads**: Complete within ~10 seconds
 - **Slow downloads**: Can take up to 120+ seconds
 
-When integrating this service with a frontend application or external services behind a reverse proxy (like **Cloudflare**, **nginx**, or **AWS ALB**), you will encounter critical issues:
+When integrating this service with a frontend application or external services
+behind a reverse proxy (like **Cloudflare**, **nginx**, or **AWS ALB**), you
+will encounter critical issues:
 
-1. **Connection Timeouts**: Proxies like Cloudflare have default timeouts (100 seconds) and will terminate long-running HTTP connections
-2. **User Experience**: Users waiting 2+ minutes with no feedback leads to poor UX
-3. **Resource Exhaustion**: Holding HTTP connections open for extended periods consumes server resources
-4. **Retry Storms**: If a client's connection is dropped, they may retry, creating duplicate work
+1. **Connection Timeouts**: Proxies like Cloudflare have default timeouts (100
+   seconds) and will terminate long-running HTTP connections
+2. **User Experience**: Users waiting 2+ minutes with no feedback leads to poor
+   UX
+3. **Resource Exhaustion**: Holding HTTP connections open for extended periods
+   consumes server resources
+4. **Retry Storms**: If a client's connection is dropped, they may retry,
+   creating duplicate work
 
 #### Experience the Problem
 
@@ -153,7 +169,9 @@ curl -X POST http://localhost:3000/v1/download/start \
 
 #### Your Mission
 
-Write a **complete implementation plan** that addresses how to integrate this download microservice with a fullstack application while handling variable download times gracefully.
+Write a **complete implementation plan** that addresses how to integrate this
+download microservice with a fullstack application while handling variable
+download times gracefully.
 
 #### Deliverables
 
@@ -239,7 +257,8 @@ Describe how a React/Next.js frontend would:
 
 #### Your Mission
 
-Set up a complete CI/CD pipeline for this service using a cloud provider's CI/CD platform. The pipeline must run all tests automatically on every push.
+Set up a complete CI/CD pipeline for this service using a cloud provider's CI/CD
+platform. The pipeline must run all tests automatically on every push.
 
 #### Requirements
 
@@ -282,7 +301,8 @@ Your pipeline must include these stages:
 
 ##### Example: GitHub Actions (Reference)
 
-A basic GitHub Actions workflow is already provided at `.github/workflows/ci.yml`. You may:
+A basic GitHub Actions workflow is already provided at
+`.github/workflows/ci.yml`. You may:
 
 - Enhance the existing workflow
 - Migrate to a different provider
@@ -290,7 +310,8 @@ A basic GitHub Actions workflow is already provided at `.github/workflows/ci.yml
 
 ##### Bonus Points
 
-- Set up automatic deployment to a cloud platform (Railway, Render, Fly.io, etc.)
+- Set up automatic deployment to a cloud platform (Railway, Render, Fly.io,
+  etc.)
 - Add security scanning (Snyk, CodeQL, Trivy)
 - Implement branch protection rules
 - Add Slack/Discord notifications for build status
@@ -301,7 +322,9 @@ A basic GitHub Actions workflow is already provided at `.github/workflows/ci.yml
 
 #### Your Mission
 
-Build a simple React UI that integrates with **Sentry** for error tracking and **OpenTelemetry** for distributed tracing, providing visibility into the download service's health and performance.
+Build a simple React UI that integrates with **Sentry** for error tracking and
+**OpenTelemetry** for distributed tracing, providing visibility into the
+download service's health and performance.
 
 #### Testing Sentry Integration
 
