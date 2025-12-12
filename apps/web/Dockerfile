@@ -6,8 +6,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies (use npm install since package-lock.json may not exist in monorepo sub-packages)
-RUN npm install
+# Install dependencies (prefer npm ci when lockfile exists, fallback to install)
+RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
 
 # Copy source files
 COPY . .
@@ -50,8 +50,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies (use npm install since package-lock.json may not exist in monorepo sub-packages)
-RUN npm install
+# Install dependencies (prefer npm ci when lockfile exists, fallback to install)
+RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
 
 # Copy source files
 COPY . .
