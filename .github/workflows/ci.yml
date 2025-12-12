@@ -34,22 +34,6 @@ jobs:
     runs-on: ubuntu-24.04
     needs: lint
 
-    services:
-      minio:
-        image: bitnami/minio:latest
-        ports:
-          - 9000:9000
-        env:
-          MINIO_ROOT_USER: minioadmin
-          MINIO_ROOT_PASSWORD: minioadmin
-          MINIO_DEFAULT_BUCKETS: downloads
-        options: >-
-          --health-cmd "curl -f http://localhost:9000/minio/health/live || exit 1"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
-          --health-start-period 30s
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -62,6 +46,32 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Start MinIO
+        run: |
+          docker run -d --name minio \
+            -p 9000:9000 \
+            -e MINIO_ROOT_USER=minioadmin \
+            -e MINIO_ROOT_PASSWORD=minioadmin \
+            minio/minio:latest server /data
+
+          # Wait for MinIO to be healthy
+          echo "Waiting for MinIO to start..."
+          for i in {1..30}; do
+            if curl -sf http://localhost:9000/minio/health/live > /dev/null 2>&1; then
+              echo "MinIO is ready!"
+              break
+            fi
+            echo "Attempt $i/30..."
+            sleep 2
+          done
+
+          # Create the downloads bucket
+          curl -sSL https://dl.min.io/client/mc/release/linux-amd64/mc -o /tmp/mc
+          chmod +x /tmp/mc
+          /tmp/mc alias set myminio http://localhost:9000 minioadmin minioadmin
+          /tmp/mc mb myminio/downloads --ignore-existing
+          echo "Bucket 'downloads' created successfully"
 
       - name: Run E2E tests
         run: npm run test:e2e
