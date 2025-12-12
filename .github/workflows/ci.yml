@@ -112,7 +112,7 @@ jobs:
           echo "Bucket 'downloads' created successfully"
 
       - name: Run E2E tests
-        run: npm run test:e2e
+        run: npm run test:e2e --workspace @cuet-hackathon/api
         env:
           NODE_ENV: test
           PORT: 3000
