@@ -5,8 +5,8 @@
     "node": ">=24.10.0"
   },
   "scripts": {
-    "dev": "DOWNLOAD_DELAY_MIN_MS=5000 DOWNLOAD_DELAY_MAX_MS=15000 node --env-file=.env --experimental-transform-types --watch src/index.ts",
-    "start": "DOWNLOAD_DELAY_MIN_MS=10000 DOWNLOAD_DELAY_MAX_MS=120000 node --env-file=.env --experimental-transform-types src/index.ts",
+    "dev": "cross-env DOWNLOAD_DELAY_MIN_MS=5000 DOWNLOAD_DELAY_MAX_MS=15000 node --env-file=.env --experimental-transform-types --watch src/index.ts",
+    "start": "cross-env DOWNLOAD_DELAY_MIN_MS=10000 DOWNLOAD_DELAY_MAX_MS=120000 node --env-file=.env --experimental-transform-types src/index.ts",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "format": "prettier --write .",
@@ -33,6 +33,7 @@
   "devDependencies": {
     "@hono/eslint-config": "^2.0.3",
     "@types/node": "^24.10.2",
+    "cross-env": "^10.1.0",
     "prettier": "^3.7.4",
     "typescript": "^5.8.3"
   }
