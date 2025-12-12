@@ -92,7 +92,13 @@ app.use(
   cors({
     origin: env.CORS_ORIGINS,
     allowMethods: ["GET", "POST", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization", "X-Request-ID"],
+    allowHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-Request-ID",
+      "traceparent",
+      "tracestate",
+    ],
     exposeHeaders: [
       "X-Request-ID",
       "X-RateLimit-Limit",

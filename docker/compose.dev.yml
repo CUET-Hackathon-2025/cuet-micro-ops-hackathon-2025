@@ -80,6 +80,28 @@ services:
     networks:
       - delineate-network
 
+  delineate-frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+      target: development
+    container_name: delineate-frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ../frontend/src:/app/src
+      - ../frontend/index.html:/app/index.html
+    environment:
+      - VITE_API_URL=http://localhost:3000
+      - VITE_SENTRY_DSN=${SENTRY_DSN:-}
+      - VITE_OTEL_EXPORTER_URL=http://localhost:4318
+      - VITE_JAEGER_UI_URL=http://localhost:16686
+    depends_on:
+      - delineate-app
+      - delineate-jaeger
+    networks:
+      - delineate-network
+
 volumes:
   minio-data:
     driver: local
