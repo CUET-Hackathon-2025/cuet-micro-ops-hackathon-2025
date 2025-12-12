@@ -14,8 +14,8 @@ Wait for all services to start (watch the logs), then access:
 | Service                | URL                        | Description                                     |
 | ---------------------- | -------------------------- | ----------------------------------------------- |
 | **Frontend Dashboard** | http://localhost:5173      | React observability dashboard                   |
-| **Backend API**        | http://localhost:4000      | Hono API server                                 |
-| **API Docs**           | http://localhost:4000/docs | OpenAPI documentation                           |
+| **Backend API**        | http://localhost:3000      | Hono API server                                 |
+| **API Docs**           | http://localhost:3000/docs | OpenAPI documentation                           |
 | **Jaeger UI**          | http://localhost:16686     | Distributed tracing                             |
 | **MinIO Console**      | http://localhost:9001      | S3 storage (user: minioadmin, pass: minioadmin) |
 
@@ -47,7 +47,7 @@ Wait for all services to start (watch the logs), then access:
 **Verify via cURL:**
 
 ```bash
-curl http://localhost:4000/health
+curl http://localhost:3000/health
 # Expected: {"status":"healthy","checks":{"storage":"ok","redis":"ok"}}
 ```
 
@@ -231,13 +231,13 @@ Errors in Sentry tagged with: trace_id=abc123
 ### Health Check
 
 ```bash
-curl http://localhost:4000/health
+curl http://localhost:3000/health
 ```
 
 ### Check File Availability
 
 ```bash
-curl -X POST http://localhost:4000/v1/download/check \
+curl -X POST http://localhost:3000/v1/download/check \
   -H "Content-Type: application/json" \
   -d '{"file_id": 70007}'
 ```
@@ -245,7 +245,7 @@ curl -X POST http://localhost:4000/v1/download/check \
 ### Trigger Sentry Error
 
 ```bash
-curl -X POST "http://localhost:4000/v1/download/check?sentry_test=true" \
+curl -X POST "http://localhost:3000/v1/download/check?sentry_test=true" \
   -H "Content-Type: application/json" \
   -d '{"file_id": 70000}'
 ```
@@ -253,7 +253,7 @@ curl -X POST "http://localhost:4000/v1/download/check?sentry_test=true" \
 ### Create Async Download Job
 
 ```bash
-curl -X POST http://localhost:4000/v1/download \
+curl -X POST http://localhost:3000/v1/download \
   -H "Content-Type: application/json" \
   -H "X-Idempotency-Key: test-123" \
   -d '{"file_id": 70007}'
@@ -262,13 +262,13 @@ curl -X POST http://localhost:4000/v1/download \
 ### Get Job Status
 
 ```bash
-curl http://localhost:4000/v1/download/status/{jobId}
+curl http://localhost:3000/v1/download/status/{jobId}
 ```
 
 ### Subscribe to Job Updates (SSE)
 
 ```bash
-curl -N http://localhost:4000/v1/download/subscribe/{jobId}
+curl -N http://localhost:3000/v1/download/subscribe/{jobId}
 ```
 
 ---
@@ -278,7 +278,7 @@ curl -N http://localhost:4000/v1/download/subscribe/{jobId}
 ### "Failed to fetch" errors
 
 - Backend not running or wrong port
-- Check: `curl http://localhost:4000/health`
+- Check: `curl http://localhost:3000/health`
 - Verify port in Docker logs
 
 ### Worker keeps crashing

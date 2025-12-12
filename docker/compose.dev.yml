@@ -67,12 +67,12 @@ services:
       dockerfile: docker/Dockerfile.dev
     container_name: delineate-app
     ports:
-      - "4000:4000"
+      - "3000:3000"
     volumes:
       - ../apps/api/src:/app/apps/api/src
     environment:
       - NODE_ENV=development
-      - PORT=4000
+      - PORT=3000
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://delineate-jaeger:4318
       # S3/MinIO
       - S3_ENDPOINT=http://delineate-minio:9000
@@ -154,6 +154,8 @@ services:
       - "4318:4318" # OTLP HTTP
     environment:
       - COLLECTOR_OTLP_ENABLED=true
+      - COLLECTOR_OTLP_HTTP_CORS_ALLOWED_ORIGINS=*
+      - COLLECTOR_OTLP_HTTP_CORS_ALLOWED_HEADERS=*
     networks:
       - delineate-network
 
@@ -169,7 +171,7 @@ services:
       - ../apps/web/src:/app/src
       - ../apps/web/index.html:/app/index.html
     environment:
-      - VITE_API_URL=http://localhost:4000
+      - VITE_API_URL=http://localhost:3000
       - VITE_SENTRY_DSN=${SENTRY_DSN:-}
       - VITE_OTEL_EXPORTER_URL=http://localhost:4318
       - VITE_JAEGER_UI_URL=http://localhost:16686

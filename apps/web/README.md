@@ -51,7 +51,7 @@ npm install
 Create a `.env` file:
 
 ```env
-VITE_API_URL=http://localhost:4000
+VITE_API_URL=http://localhost:3000
 VITE_SENTRY_DSN=<your-sentry-dsn>
 VITE_OTEL_EXPORTER_URL=http://localhost:4318
 VITE_JAEGER_UI_URL=http://localhost:16686
@@ -145,7 +145,7 @@ This starts:
 ```bash
 docker build -t observability-dashboard --target development .
 docker run -p 5173:5173 \
-  -e VITE_API_URL=http://localhost:4000 \
+  -e VITE_API_URL=http://localhost:3000 \
   -e VITE_OTEL_EXPORTER_URL=http://localhost:4318 \
   observability-dashboard
 ```

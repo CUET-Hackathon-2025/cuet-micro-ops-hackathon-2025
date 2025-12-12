@@ -29,7 +29,7 @@ export function Dashboard() {
               <div className="text-right hidden sm:block">
                 <p className="text-xs text-muted-foreground">API Endpoint</p>
                 <code className="text-sm text-primary font-mono">
-                  {import.meta.env.VITE_API_URL ?? "http://localhost:4000"}
+                  {import.meta.env.VITE_API_URL ?? "http://localhost:3000"}
                 </code>
               </div>
               <a
@@ -81,7 +81,7 @@ export function Dashboard() {
               <span className="font-medium text-foreground">Quick Links:</span>
             </div>
             <a
-              href={`${import.meta.env.VITE_API_URL ?? "http://localhost:4000"}/docs`}
+              href={`${import.meta.env.VITE_API_URL ?? "http://localhost:3000"}/docs`}
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-primary transition-colors"

@@ -3,7 +3,7 @@ import { getTracer, createTraceparent } from "./tracing";
 import { logError, addBreadcrumb } from "./sentry";
 import type { SpanStatusCode } from "@opentelemetry/api";
 
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
+const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
 // Create axios instance with defaults
 const apiClient = axios.create({
@@ -494,6 +494,48 @@ export function subscribeToJobUpdates(
   return () => {
     eventSource.close();
   };
+}
+
+// Download file with progress tracking
+export interface DownloadProgress {
+  loaded: number;
+  total: number;
+  percentage: number;
+}
+
+export async function downloadFileWithProgress(
+  url: string,
+  filename: string,
+  onProgress?: (progress: DownloadProgress) => void,
+): Promise<Blob> {
+  const response = await axios.get(url, {
+    responseType: "blob",
+    onDownloadProgress: (progressEvent) => {
+      if (progressEvent.total) {
+        const progress: DownloadProgress = {
+          loaded: progressEvent.loaded,
+          total: progressEvent.total,
+          percentage: Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total,
+          ),
+        };
+        onProgress?.(progress);
+      }
+    },
+  });
+
+  // Create download link and trigger download
+  const blob = response.data;
+  const downloadUrl = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = downloadUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(downloadUrl);
+
+  return blob;
 }
 
 // Export API URL for components
