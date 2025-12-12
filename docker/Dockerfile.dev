@@ -10,4 +10,6 @@ COPY . .
 
 EXPOSE 3000
 
-CMD ["npm", "run", "dev"]
+# Use direct node command instead of npm run dev to avoid --env-file dependency
+# Docker Compose env_file handles environment variables
+CMD ["node", "--experimental-transform-types", "--watch", "src/index.ts"]
